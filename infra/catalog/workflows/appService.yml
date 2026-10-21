@@ -28,8 +28,8 @@ jobs:
     name: Test (Linux)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-dotnet@v6
+      - uses: {{action:checkout}}
+      - uses: {{action:setup-dotnet}}
         with:
           dotnet-version: '{{dotnet}}'
 {{testStep}}
@@ -43,7 +43,7 @@ jobs:
     outputs:
       environment: ${{ steps.pick.outputs.environment }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: {{action:checkout}}
         with:
           sparse-checkout: infra
       - id: pick
@@ -65,9 +65,9 @@ jobs:
         run: |
           if [ -n "${{ vars.{{appVar}} }}" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
           else echo "::notice::No {{appVar}} in this environment yet (.\infra\azure-setup.ps1): deploy skipped."; fi
-      - uses: actions/checkout@v7
+      - uses: {{action:checkout}}
         if: steps.env.outputs.ready
-      - uses: actions/setup-dotnet@v6
+      - uses: {{action:setup-dotnet}}
         if: steps.env.outputs.ready
         with:
           dotnet-version: '{{dotnet}}'
@@ -75,13 +75,13 @@ jobs:
       - name: Publish (linux-x64)
         if: steps.env.outputs.ready
         run: dotnet publish {{project}} -c Release -r linux-x64 --self-contained false{{publishArgs}} -o publish
-      - uses: azure/login@v3
+      - uses: {{action:azure-login}}
         if: steps.env.outputs.ready
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
           tenant-id: ${{ vars.AZURE_TENANT_ID }}
           subscription-id: ${{ vars.AZURE_SUBSCRIPTION_ID }}
-      - uses: azure/webapps-deploy@v3
+      - uses: {{action:webapps-deploy}}
         if: steps.env.outputs.ready
         with:
           app-name: ${{ vars.{{appVar}} }}

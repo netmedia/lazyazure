@@ -1,0 +1,15 @@
+{
+  "$comment": "The GitHub Actions every generated workflow uses, by a short name: the templates write {{action:<name>}}, a build's step \"uses\": \"<name>\". Upgrading one here upgrades it in every workflow (then .\\infra\\generate.ps1). Checked 2026-10-22: all on Node 24 (static-web-apps-deploy: Docker).",
+  "checkout": "actions/checkout@v7",
+  "setup-dotnet": "actions/setup-dotnet@v6",
+  "setup-node": "actions/setup-node@v7",
+  "setup-java": "actions/setup-java@v6",
+  "setup-gradle": "gradle/actions/setup-gradle@v6",
+  "cache": "actions/cache@v6",
+  "upload-artifact": "actions/upload-artifact@v7",
+  "download-artifact": "actions/download-artifact@v8",
+  "azure-login": "azure/login@v3",
+  "webapps-deploy": "azure/webapps-deploy@v3",
+  "functions-action": "Azure/functions-action@v1",
+  "static-web-apps-deploy": "Azure/static-web-apps-deploy@v1"
+}

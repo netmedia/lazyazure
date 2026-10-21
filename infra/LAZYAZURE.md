@@ -207,6 +207,41 @@ and signs in to Azure with the GitHub environment's `AZURE_CLIENT_ID`, `AZURE_TE
 `AZURE_SUBSCRIPTION_ID` (OIDC, `azure/login`); each app's name is a variable `AZURE_<KEY>_NAME`, a Static
 Web App's token the secret `AZURE_STATIC_WEB_APPS_API_TOKEN_<KEY>`.
 
+### Actions
+
+Every generated workflow takes its GitHub Actions from `catalog/workflows/actions.json` by a short name
+(`"checkout": "actions/checkout@v7"`): templates write `{{action:checkout}}`, a build's step `"uses": "checkout"`.
+Upgrading an action there (e.g. when GitHub deprecates a Node version) upgrades every workflow on the next
+`.\infra\generate.ps1`.
+
+## Builds
+
+Workflows of no Azure resource (build, test, pack, publish a package) go into the map's `builds`, and
+`generate.ps1` writes them like the deploys (`# GENERATED`, never over a hand-written file; to move a
+hand-written one into the map, describe it in `builds`, delete the file, generate and compare):
+
+| Field | Meaning |
+|---|---|
+| `workflow`, `name`, `about` | Its file, its name in GitHub, the comment on top |
+| `branches` | Push branches: names, and `"{environments}"` for the environments' deploy branches; none: manual runs only |
+| `paths` | Paths that trigger it (the workflow itself is added) |
+| `inputs` | Manual run inputs: `{ "<name>": { description, type, options, default } }` |
+| `permissions` | The workflow's token permissions |
+| `jobs` | `{ id, name, needs, if, runsOn, permissions, steps }` |
+
+A step is `{ comment, name, if, id, uses, with, workingDirectory, shell, run }`; `uses` is a name of
+`actions.json` or a full `owner/action@version`, `run` may have several lines.
+
+```json
+"builds": [{
+  "workflow": "ci.yml", "name": "CI", "branches": ["main", "{environments}"], "paths": ["src/**"],
+  "jobs": [{ "id": "test", "name": "Test", "runsOn": "ubuntu-latest", "steps": [
+    { "uses": "checkout" },
+    { "uses": "setup-dotnet", "with": { "dotnet-version": "10.0.x" } },
+    { "name": "Test", "run": "dotnet test" } ] }]
+}]
+```
+
 ## Updating the kit
 
 From the LazyAzure repository: `.\initintoproject.ps1 <project>\infra -Update`. It replaces the kit's

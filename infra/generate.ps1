@@ -116,6 +116,7 @@ if (-not $Quiet) { Show-Author }
 $map = Get-Content (Join-Path $infra 'infra.map.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $roles = Get-Content (Join-Path $infra 'catalog\roles.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $naming = Get-Content (Join-Path $infra 'naming.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+$actions = Get-Content (Join-Path $infra 'catalog\workflows\actions.json') -Raw -Encoding UTF8 | ConvertFrom-Json
 $defs = @($map.resources)
 $noBicep = @('resourceGroup', 'entraDeployApp') # made by the setup itself
 $target = Join-Path $infra ([string]$map.project.template)
@@ -232,6 +233,13 @@ function Get-Fragment([string]$Kind, [hashtable]$Values, [hashtable]$Flags, [str
             return ''
         })
     foreach ($k in $Values.Keys) { $text = $text.Replace("{{$k}}", [string]$Values[$k]) }
+    # Actions by their short names (catalog/workflows/actions.json).
+    $text = [regex]::Replace($text, '\{\{action:([\w-]+)\}\}', [Text.RegularExpressions.MatchEvaluator] {
+            param($m)
+            $a = $actions.($m.Groups[1].Value)
+            if (-not $a) { Fail "catalog/workflows/actions.json has no action $($m.Groups[1].Value)" }
+            return [string]$a
+        })
     $left = [regex]::Match($text, '\{\{(\w+)\}\}')
     if ($left.Success) { Fail "catalog/$Kind.bicep: nothing fills {{$($left.Groups[1].Value)}}" }
     return $text.TrimEnd()
@@ -473,21 +481,115 @@ function Get-EnvBranches {
 function Get-YamlQuoted([string]$Text) { return "'" + $Text.Replace("'", "''") + "'" }
 # A step of the map: { name, id, workingDirectory, run, comment }; $If on every step of a job that skips
 # when the environment isn't set up.
+# An action by its short name in catalog/workflows/actions.json (checkout -> actions/checkout@v7), or as given.
+function Get-Action([string]$Name) {
+    if ($actions.$Name) { return [string]$actions.$Name }
+    return $Name
+}
+# A value of "with:" or an input: numbers and booleans as they are; text plain when YAML reads it as text,
+# else quoted (a version like '8.7' stays text).
+function Get-YamlValue($Value) {
+    if ($Value -is [bool]) { if ($Value) { return 'true' } return 'false' }
+    if ($Value -is [ValueType]) { return [string]$Value }
+    $t = [string]$Value
+    if ($t -match '^[0-9]' -or $t -match ': | #' -or $t -match '^[\[\]{}&*!|>''"%@`#,?:-]' -or @('true', 'false', 'null', 'yes', 'no', '~', '') -contains $t.ToLower()) { return Get-YamlQuoted $t }
+    return $t
+}
+# A step of the map: { comment, name, if, id, uses, with, workingDirectory, run }; $If on every step of a
+# job that skips when the environment isn't set up.
 function Get-StepYaml($Step, [string]$If) {
     $lines = @()
     foreach ($c in @($Step.comment | Where-Object { $_ })) { $lines += "      # $c" }
-    $lines += "      - name: $($Step.name)"
-    if ($If) { $lines += "        if: $If" }
-    if ($Step.id) { $lines += "        id: $($Step.id)" }
-    if ($Step.workingDirectory) { $lines += "        working-directory: $($Step.workingDirectory)" }
-    $run = ([string]$Step.run).Replace("`r", '')
-    # One plain line when YAML reads it as it is, else a block.
-    if ($run -notmatch "`n" -and $run -notmatch ': | #' -and $run -notmatch '^[\[\]{}&*!|>''"%@`#,?:-]') { $lines += "        run: $run" }
-    else {
-        $lines += '        run: |'
-        foreach ($l in $run.Split("`n")) { $lines += "          $l" }
+    $fields = @()
+    if ($Step.name) { $fields += "name: $($Step.name)" }
+    $condition = $If
+    if ($Step.if) { $condition = [string]$Step.if }
+    if ($condition) { $fields += "if: $condition" }
+    if ($Step.id) { $fields += "id: $($Step.id)" }
+    if ($Step.uses) { $fields += "uses: $(Get-Action ([string]$Step.uses))" }
+    if ($Step.with) {
+        $fields += 'with:'
+        foreach ($p in $Step.with.PSObject.Properties) { $fields += "  $($p.Name): $(Get-YamlValue $p.Value)" }
+    }
+    if ($Step.workingDirectory) { $fields += "working-directory: $($Step.workingDirectory)" }
+    if ($Step.shell) { $fields += "shell: $($Step.shell)" }
+    if ($Step.run) {
+        $run = ([string]$Step.run).Replace("`r", '')
+        # One plain line when YAML reads it as it is, else a block.
+        if ($run -notmatch "`n" -and $run -notmatch ': | #' -and $run -notmatch '^[\[\]{}&*!|>''"%@`#,?:-]') { $fields += "run: $run" }
+        else {
+            $fields += 'run: |'
+            foreach ($l in $run.Split("`n")) { $fields += "  $l" }
+        }
+    }
+    for ($i = 0; $i -lt $fields.Count; $i++) {
+        if ($i -eq 0) { $lines += "      - $($fields[$i])" } else { $lines += "        $($fields[$i])" }
     }
     return ($lines -join "`n")
+}
+
+# A build of the map ("builds": a workflow of no Azure resource: build, test, pack...): its triggers,
+# manual-run inputs and jobs, written out as they are.
+function Get-BuildWorkflow($Build, [string[]]$EnvBranches, [string[]]$EnvNames) {
+    $out = New-Object Collections.Generic.List[string]
+    $out.Add("$generatedMark from infra/infra.map.json (the build $($Build.workflow)): don't edit it here.")
+    $out.Add('# Change "builds" in the map, then run .\infra\generate.ps1.')
+    $out.Add('#')
+    foreach ($a in @($Build.about | Where-Object { $_ })) { $out.Add("# $a") }
+    $out.Add("name: $($Build.name)")
+    $out.Add('')
+    $out.Add('on:')
+    # Its branches: named ones, and "{environments}" for the environments' deploy branches.
+    $branches = @()
+    foreach ($b in @($Build.branches | Where-Object { $_ })) { if ($b -eq '{environments}') { $branches += $EnvBranches } else { $branches += [string]$b } }
+    $branches = @($branches | Select-Object -Unique)
+    if ($branches.Count) {
+        $out.Add('  push:')
+        $out.Add('    branches: [' + ((@($branches | ForEach-Object { Get-YamlQuoted $_ })) -join ', ') + ']')
+        $paths = @($Build.paths | Where-Object { $_ }) + ".github/workflows/$($Build.workflow)"
+        $out.Add('    paths:')
+        foreach ($p in $paths) {
+            if ($p -is [string]) { $out.Add("      - $(Get-YamlQuoted $p)") }
+            else { foreach ($c in @($p.comment | Where-Object { $_ })) { $out.Add("      # $c") }; $out.Add("      - $(Get-YamlQuoted $p.path)") }
+        }
+    }
+    $out.Add('  workflow_dispatch:')
+    if ($Build.inputs) {
+        $out.Add('    inputs:')
+        foreach ($i in $Build.inputs.PSObject.Properties) {
+            $out.Add("      $($i.Name):")
+            if ($i.Value.description) { $out.Add("        description: $(Get-YamlQuoted ([string]$i.Value.description))") }
+            if ($i.Value.type) { $out.Add("        type: $($i.Value.type)") }
+            if ($i.Value.options) { $out.Add('        options: [' + ((@($i.Value.options) | ForEach-Object { [string]$_ }) -join ', ') + ']') }
+            if ($null -ne $i.Value.default) { $out.Add("        default: $(Get-YamlValue $i.Value.default)") }
+        }
+    }
+    if ($Build.permissions) {
+        $out.Add('')
+        $out.Add('permissions:')
+        foreach ($p in $Build.permissions.PSObject.Properties) { $out.Add("  $($p.Name): $($p.Value)") }
+    }
+    $out.Add('')
+    $out.Add('jobs:')
+    $first = $true
+    foreach ($j in @($Build.jobs | Where-Object { $_ })) {
+        if (-not $first) { $out.Add('') }
+        $first = $false
+        $out.Add("  $($j.id):")
+        if ($j.name) { $out.Add("    name: $($j.name)") }
+        $needs = @($j.needs | Where-Object { $_ })
+        if ($needs.Count -eq 1) { $out.Add("    needs: $($needs[0])") } elseif ($needs.Count) { $out.Add('    needs: [' + ($needs -join ', ') + ']') }
+        if ($j.if) { $out.Add("    if: $($j.if)") }
+        $out.Add("    runs-on: $($j.runsOn)")
+        if ($j.permissions) {
+            $out.Add('    permissions:')
+            foreach ($p in $j.permissions.PSObject.Properties) { $out.Add("      $($p.Name): $($p.Value)") }
+        }
+        $out.Add('    steps:')
+        $steps = Get-StepsYaml $j.steps ''
+        if ($steps) { $out.Add($steps) }
+    }
+    return (($out -join "`n") + "`n")
 }
 function Get-StepsYaml($Steps, [string]$If) { return ((@($Steps | Where-Object { $_ }) | ForEach-Object { Get-StepYaml $_ $If }) -join "`n") }
 
@@ -576,6 +678,12 @@ function Get-Workflows {
             }
         }
         $out[[string]$dep.workflow] = (Get-Fragment $d.kind $v $f $template) + "`n"
+    }
+    # The builds (workflows of no Azure resource).
+    foreach ($b in @($map.builds | Where-Object { $_ })) {
+        if (-not $b.workflow) { Fail 'a build has no workflow (its file name in .github/workflows)' }
+        if ($out.Contains([string]$b.workflow)) { Fail "two workflows named $($b.workflow)" }
+        $out[[string]$b.workflow] = Get-BuildWorkflow $b $envBranches $envNames
     }
     return $out
 }
