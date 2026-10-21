@@ -1,0 +1,34 @@
+{
+  "kind": "keyVault",
+  "title": "Key Vault",
+  "about": "An RBAC Key Vault for the apps' secrets: they read them through Key Vault references with their managed identities; you get Secrets Officer to put the secrets in. New, or shared from another resource group.",
+  "addable": true,
+  "keyDefault": "vault",
+  "naming": { "type": "kv" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (globally unique)",
+    "type": "kv",
+    "armType": "Microsoft.KeyVault/vaults",
+    "ask": "shared",
+    "check": "rbacVault",
+    "free": "vaultSoftDelete",
+    "apiVersion": "2023-07-01",
+    "param": "<key>Name",
+    "groupParam": "<key>Group",
+    "kind": "keyVault",
+    "ownerRole": "Key Vault Secrets Officer",
+    "role": "RBAC vault: secrets the apps read through Key Vault references",
+    "cost": { "kind": "pennies", "order": 4, "label": "Key Vault {name}" },
+    "secrets": []
+  },
+  "users": {
+    "kinds": ["appService", "functionApp"],
+    "question": "Which apps read secrets from <title>?",
+    "connection": { "kind": "role", "roles": ["Key Vault Secrets User"], "what": "reads secrets", "via": "Key Vault references: Key Vault Secrets User" },
+    "settings": []
+  },
+  "providers": ["Microsoft.KeyVault"],
+  "removeOrder": { "types": ["Microsoft.KeyVault/vaults"], "before": ["Microsoft.Web/serverFarms"] }
+}

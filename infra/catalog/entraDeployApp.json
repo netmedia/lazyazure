@@ -1,0 +1,18 @@
+{
+  "kind": "entraDeployApp",
+  "title": "App registration (Entra)",
+  "about": "The app registration GitHub Actions signs in to Azure with (OIDC: a federated credential per GitHub environment, no stored secret); it gets a deploy role on each app.",
+  "addable": false,
+  "keyDefault": "deployApp",
+  "naming": { "type": "deploy" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "App registration GitHub Actions deploys with",
+    "type": "deploy",
+    "armType": "Microsoft.Graph/applications",
+    "ask": "name",
+    "kind": "entraDeployApp",
+    "role": "GitHub Actions signs in with it (OIDC, no stored secret)"
+  }
+}

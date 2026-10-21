@@ -1,0 +1,18 @@
+{
+  "kind": "resourceGroup",
+  "title": "Resource group",
+  "about": "The resource group of an environment: everything lives here, unless a shared resource is picked from another group.",
+  "addable": false,
+  "keyDefault": "resourceGroup",
+  "naming": { "type": "resgr" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "Resource group",
+    "type": "resgr",
+    "armType": "Microsoft.Resources/resourceGroups",
+    "ask": "group",
+    "kind": "resourceGroup",
+    "role": "Everything of the environment lives here, unless a shared resource is picked from another group"
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "kind": "flexPlan",
+  "title": "Flex Consumption plan",
+  "about": "The plan of one Flex Consumption function app (added with it).",
+  "addable": false,
+  "keyDefault": "funcPlan",
+  "naming": { "type": "appplan" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (Flex Consumption)",
+    "type": "appplan",
+    "target": "<target>",
+    "targetLabel": "<title>",
+    "armType": "Microsoft.Web/serverfarms",
+    "ask": "own",
+    "param": "<key>Name",
+    "kind": "flexPlan",
+    "role": "Flex Consumption plan of one function app"
+  },
+  "providers": ["Microsoft.Web"]
+}

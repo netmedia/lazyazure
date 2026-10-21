@@ -1,0 +1,13 @@
+{
+  "$comment": "LazyAzure: the kit's version and the files that are the kit's (initintoproject.ps1 -Update replaces these; everything else in infra/ is the project's).",
+  "name": "LazyAzure",
+  "version": "0.1.0",
+  "author": "Netmedia",
+  "web": "https://netmedia.agency",
+  "email": "netmedia@netmedia.hr",
+  "repository": "https://github.com/netmedia/lazyazure",
+  "files": ["azure-setup.ps1", "lazyazure.ps1", "lazyazure.exe", "generate.ps1", "route.ps1", "catalog", "modules", "LAZYAZURE.md", "kit.json"],
+  "$rootFiles": "Also put into the project's root (the folder above infra), so lazyazure starts from there too: it finds infra/lazyazure.ps1.",
+  "rootFiles": ["lazyazure.exe"],
+  "projectFiles": ["infra.map.json", "naming.json", "environments", "main.bicep", "README.md"]
+}

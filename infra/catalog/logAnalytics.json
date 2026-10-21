@@ -1,0 +1,24 @@
+{
+  "kind": "logAnalytics",
+  "title": "Log Analytics workspace",
+  "about": "The Log Analytics workspace Application Insights keeps its data in (30 days); new, or shared from another resource group.",
+  "addable": true,
+  "keyDefault": "workspace",
+  "naming": { "type": "logs" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (of Application Insights)",
+    "type": "logs",
+    "armType": "Microsoft.OperationalInsights/workspaces",
+    "ask": "workspace",
+    "neededBy": [],
+    "linkProperty": "WorkspaceResourceId",
+    "param": "<key>Name",
+    "groupParam": "<key>Group",
+    "kind": "logAnalytics",
+    "role": "Where Application Insights keeps its data (30 days)"
+  },
+  "providers": ["Microsoft.OperationalInsights"],
+  "removeOrder": { "types": ["Microsoft.OperationalInsights/workspaces"], "before": [] }
+}

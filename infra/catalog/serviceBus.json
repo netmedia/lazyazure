@@ -1,0 +1,38 @@
+{
+  "kind": "serviceBus",
+  "title": "Service Bus",
+  "about": "A Service Bus namespace with its queues, Entra sign-in only (no keys or connection strings): the apps that use it get Data Sender and/or Receiver roles and its address.",
+  "addable": true,
+  "keyDefault": "bus",
+  "naming": { "type": "sbus", "about": "Service Bus namespace", "maxLength": 50 },
+  "questions": [
+    { "id": "queues", "label": "Queues of <title> (comma-separated names)", "default": "jobs" }
+  ],
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (globally unique: <name>.servicebus.windows.net)",
+    "type": "sbus",
+    "armType": "Microsoft.ServiceBus/namespaces",
+    "ask": "own",
+    "free": "nameAvailable",
+    "apiVersion": "2021-11-01",
+    "param": "<key>Name",
+    "kind": "serviceBus",
+    "queues": "<q.queues[]>",
+    "role": "Service Bus namespace: queues, Entra sign-in only",
+    "size": { "answer": "<key>Sku", "param": "<key>Sku", "label": "Tier of <title>", "options": ["Basic", "Standard"], "default": "Basic" },
+    "cost": { "kind": "table", "order": 30, "label": "Service Bus {name} ({size})", "prices": { "Standard": 8.80 }, "texts": { "Basic": "< 0.10 (per million operations)" } }
+  },
+  "users": {
+    "kinds": ["appService", "functionApp"],
+    "question": "Which apps use <title>?",
+    "roles": { "question": "What may <app> do on <title>?", "options": ["Azure Service Bus Data Sender", "Azure Service Bus Data Receiver"], "default": ["Azure Service Bus Data Sender", "Azure Service Bus Data Receiver"] },
+    "connection": { "kind": "role", "what": "sends and receives messages", "via": "its managed identity" },
+    "settings": [
+      { "name": "ServiceBus__<Key>__FullyQualifiedNamespace", "value": "{<key>.host}" }
+    ]
+  },
+  "providers": ["Microsoft.ServiceBus"],
+  "removeOrder": { "types": ["Microsoft.ServiceBus/namespaces"], "before": ["Microsoft.Web/serverFarms", "Microsoft.OperationalInsights/workspaces"] }
+}

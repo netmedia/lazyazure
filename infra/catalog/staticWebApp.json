@@ -1,0 +1,34 @@
+{
+  "kind": "staticWebApp",
+  "title": "Static Web App",
+  "about": "A front end (React, Angular, plain HTML...) on Azure Static Web Apps, Free or Standard; deployed by GitHub Actions with its deployment token (kept in the GitHub environment).",
+  "addable": true,
+  "app": true,
+  "keyDefault": "web",
+  "naming": { "type": "statapp" },
+  "questions": [
+    { "id": "source", "label": "Source folder of <title> (its code: a push there deploys it)", "default": "src/<Key>" },
+    { "id": "output", "label": "Folder the build of <title> writes the site to (in its source folder)", "default": "dist" }
+  ],
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (a Static Web App)",
+    "type": "statapp",
+    "target": "<target>",
+    "targetLabel": "<title>",
+    "armType": "Microsoft.Web/staticSites",
+    "ask": "own",
+    "param": "<key>Name",
+    "kind": "staticWebApp",
+    "role": "<title>: a front end on Static Web Apps",
+    "size": { "answer": "<key>Sku", "param": "<key>Sku", "label": "Static Web App plan of <title>", "options": ["Free", "Standard"], "default": "Free" },
+    "cost": { "kind": "staticWebApp", "order": 2, "label": "Static Web App {name} ({size})" },
+    "appSettings": [],
+    "deploy": { "workflow": "<key>.yml", "name": "<title>", "source": "<q.source>", "node": "22", "build": { "name": "Build <title>", "run": "npm ci
+npm run build" }, "app": "./<q.source>/<q.output>", "api": "" }
+  },
+  "github": { "tokenSecret": "AZURE_STATIC_WEB_APPS_API_TOKEN_<KEY>" },
+  "providers": ["Microsoft.Web"],
+  "removeOrder": { "types": ["Microsoft.Web/staticSites"], "before": ["Microsoft.Web/serverFarms"] }
+}

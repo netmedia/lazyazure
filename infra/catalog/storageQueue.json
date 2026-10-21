@@ -1,0 +1,34 @@
+{
+  "kind": "storageQueue",
+  "title": "Storage queue",
+  "about": "A queue of a storage account of the map (simple, cheap messaging). The apps that use it get a queue role on it and its address; no keys.",
+  "addable": true,
+  "keyDefault": "queue",
+  "naming": { "type": "queue", "about": "storage queue", "maxLength": 63 },
+  "requires": [
+    { "kind": "storage", "question": "Which storage account is it in?", "connection": { "kind": "host", "what": "is a queue of", "via": "queueServices/default" } }
+  ],
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (a queue of <host.title>)",
+    "type": "queue",
+    "armType": "Microsoft.Storage/storageAccounts/queueServices/queues",
+    "ask": "child",
+    "param": "<key>Name",
+    "kind": "storageQueue",
+    "role": "A queue of <host.title>",
+    "cost": { "kind": "table", "order": 31, "label": "Storage queue {name}", "prices": {}, "otherwise": null, "text": "< 0.10" }
+  },
+  "users": {
+    "kinds": ["appService", "functionApp"],
+    "question": "Which apps use <title>?",
+    "roles": { "question": "What may <app> do on <title>?", "options": ["Storage Queue Data Contributor", "Storage Queue Data Message Sender", "Storage Queue Data Message Processor"], "default": ["Storage Queue Data Contributor"] },
+    "connection": { "kind": "role", "what": "sends and reads messages", "via": "its managed identity" },
+    "settings": [
+      { "name": "Queues__<Key>__Name", "value": "{<key>.name}" },
+      { "name": "Queues__<Key>__ServiceUri", "value": "{<host>.queueEndpoint}" }
+    ]
+  },
+  "providers": ["Microsoft.Storage"]
+}

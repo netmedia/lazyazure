@@ -1,0 +1,53 @@
+{
+  "$comment": "Azure naming rules (LAZYAZURE.md, 'Naming'). infra/azure-setup.ps1 builds every default name from these; change them here. The project's file: a kit update never replaces it.",
+  "pattern": "{prefix}-{sub}-{type}-{env}",
+  "insightsPattern": "{prefix}-{sub}-{type}-{env}-insights",
+  "sharedInsightsPattern": "{prefix}-{sub}-{env}-insights",
+  "defaults": {
+    "prefix": "nm-app"
+  },
+  "$targets": "Deployment targets: each has its own sub application name, asked by the setup ('-' for none). The environment's shared resources have none.",
+  "targets": ["statapp", "apiapp", "webapp", "func", "dfunc"],
+  "types": {
+    "statapp": "static app (the usual frontend app)",
+    "apiapp": ".NET API web app",
+    "webapp": "web app (ASP.NET MVC, PHP or similar)",
+    "func": "functions",
+    "dfunc": "durable functions",
+    "store": "storage account",
+    "sqldb": "main SQL database of the project",
+    "sqlserv": "Azure SQL server",
+    "resgr": "resource group",
+    "appplan": "application plan",
+    "kv": "key vault",
+    "logs": "Log Analytics workspace",
+    "insights": "Application Insights",
+    "deploy": "Entra app registration GitHub Actions deploys with",
+    "sbus": "Service Bus namespace",
+    "queue": "storage queue"
+  },
+  "environments": {
+    "prod": "production",
+    "test": "test",
+    "stag": "staging",
+    "dev": "development",
+    "accp": "acceptance"
+  },
+  "noHyphens": ["store"],
+  "maxLength": {
+    "resgr": 90,
+    "appplan": 40,
+    "apiapp": 60,
+    "statapp": 40,
+    "func": 60,
+    "store": 24,
+    "kv": 24,
+    "logs": 63,
+    "insights": 255,
+    "deploy": 120,
+    "sqlserv": 63,
+    "sqldb": 128,
+    "sbus": 50,
+    "queue": 63
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "kind": "storage",
+  "title": "Storage account",
+  "about": "A StorageV2 account (blobs, queues, tables) without keys: the apps that use it sign in with their managed identities and get the roles you pick.",
+  "addable": true,
+  "keyDefault": "storage",
+  "naming": { "type": "store" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (no hyphens, globally unique)",
+    "type": "store",
+    "armType": "Microsoft.Storage/storageAccounts",
+    "ask": "own",
+    "free": "nameAvailable",
+    "apiVersion": "2023-05-01",
+    "param": "<key>Name",
+    "kind": "storage",
+    "role": "Blobs, queues and tables, reached with managed identities (no keys)",
+    "cost": { "kind": "pennies", "order": 3, "label": "Storage account {name}" }
+  },
+  "users": {
+    "kinds": ["appService", "functionApp"],
+    "question": "Which apps use <title>?",
+    "roles": { "question": "What may <app> do on <title>?", "options": ["Storage Blob Data Contributor", "Storage Queue Data Contributor", "Storage Table Data Contributor"], "default": ["Storage Blob Data Contributor"] },
+    "connection": { "kind": "role", "what": "reads and writes data", "via": "its managed identity" },
+    "settings": [
+      { "name": "Storage__<Key>__BlobServiceUri", "value": "{<key>.blobEndpoint}" }
+    ]
+  },
+  "providers": ["Microsoft.Storage"],
+  "removeOrder": { "types": ["Microsoft.Storage/storageAccounts"], "before": ["Microsoft.KeyVault/vaults", "Microsoft.Web/serverFarms"] }
+}

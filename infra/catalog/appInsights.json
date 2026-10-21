@@ -1,0 +1,35 @@
+{
+  "kind": "appInsights",
+  "title": "Application Insights",
+  "about": "Application Insights on a Log Analytics workspace of the map: the apps that use it get its connection string. New, or shared from another resource group.",
+  "addable": true,
+  "keyDefault": "insights",
+  "naming": { "type": "insights" },
+  "requires": [
+    { "kind": "logAnalytics", "question": "Which Log Analytics workspace keeps the data of <title>?", "connection": { "kind": "logs", "what": "keeps its data in", "via": "WorkspaceResourceId" } }
+  ],
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title>",
+    "type": "insights",
+    "armType": "Microsoft.Insights/components",
+    "ask": "shared",
+    "param": "<key>Name",
+    "groupParam": "<key>Group",
+    "pattern": "sharedInsightsPattern",
+    "kind": "appInsights",
+    "role": "Telemetry of the apps that use it",
+    "cost": { "kind": "logs", "order": 5, "label": "Application Insights + Log Analytics" }
+  },
+  "users": {
+    "kinds": ["appService", "functionApp", "staticWebApp"],
+    "question": "Which apps send their telemetry to <title>?",
+    "connection": { "kind": "telemetry", "what": "telemetry", "via": "APPLICATIONINSIGHTS_CONNECTION_STRING" },
+    "settings": [
+      { "name": "APPLICATIONINSIGHTS_CONNECTION_STRING", "value": "{<key>.connectionString}" }
+    ]
+  },
+  "providers": ["Microsoft.Insights"],
+  "removeOrder": { "types": ["Microsoft.Insights/components"], "before": ["Microsoft.Storage/storageAccounts", "Microsoft.Web/serverFarms"] }
+}

@@ -1,0 +1,13 @@
+{
+  "project": { "name": "My ERP", "description": "The ERP API, its admin API and web app, with SQL, Service Bus and Key Vault", "prefix": "nm-myerp", "region": "westeurope", "deploymentName": "myerp-{env}" },
+  "resources": [
+    { "kind": "appServicePlan", "key": "plan", "title": "App Service plan" },
+    { "kind": "appService", "key": "api", "title": "ERP API", "answers": { "runtime": "DOTNETCORE|10.0", "health": "/healthz" }, "requires": { "appServicePlan": "plan" } },
+    { "kind": "appService", "key": "adminApi", "title": "Admin API", "requires": { "appServicePlan": "plan" } },
+    { "kind": "staticWebApp", "key": "web", "title": "Web app" },
+    { "kind": "appInsights", "key": "insights", "title": "Application Insights", "requires": { "logAnalytics": "new" }, "users": ["api", "adminApi", "web"] },
+    { "kind": "sqlDatabase", "key": "erpDb", "title": "ERP database", "requires": { "sqlServer": "new" }, "users": ["api", "adminApi"] },
+    { "kind": "serviceBus", "key": "bus", "title": "Service Bus", "answers": { "queues": "invoices, mail" }, "users": ["api", "adminApi"], "roles": { "api": ["Azure Service Bus Data Sender"], "adminApi": ["Azure Service Bus Data Receiver"] } },
+    { "kind": "keyVault", "key": "vault", "title": "Key Vault", "users": ["api", "adminApi"] }
+  ]
+}

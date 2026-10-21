@@ -1,0 +1,48 @@
+{
+  "kind": "functionApp",
+  "title": "Function app",
+  "about": "Azure Functions on Linux: Flex Consumption (billed per use, its own plan) or on an App Service plan of the map. Its state is in a storage account it reaches with its managed identity (no keys); deployed by GitHub Actions with OIDC.",
+  "addable": true,
+  "app": true,
+  "keyDefault": "func",
+  "naming": { "type": "func" },
+  "questions": [
+    { "id": "hosting", "label": "Hosting of <title>", "options": ["flex", "plan"], "default": "flex" },
+    { "id": "runtime", "label": "Runtime of <title>", "default": "DOTNET-ISOLATED|10.0", "runtimes": "function" },
+    { "id": "source", "label": "Source folder of <title> (its code: a push there deploys it)", "default": "src/<Key>" }
+  ],
+  "creates": [
+    { "kind": "flexPlan", "key": "<key>Plan", "title": "<title> plan", "when": { "hosting": "flex" }, "connection": { "kind": "host", "what": "runs on", "via": "serverFarmId" } }
+  ],
+  "requires": [
+    { "kind": "appServicePlan", "when": { "hosting": "plan" }, "question": "Which App Service plan does <title> run on?", "connection": { "kind": "host", "what": "runs on", "via": "serverFarmId" } },
+    { "kind": "storage", "field": "stateStorage", "question": "Which storage account keeps the state of <title> (AzureWebJobsStorage)?", "connection": { "kind": "role", "roles": ["Storage Blob Data Owner", "Storage Queue Data Contributor", "Storage Table Data Contributor"], "what": "its state and packages", "via": "AzureWebJobsStorage__accountName: its managed identity" } }
+  ],
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (<name>.azurewebsites.net)",
+    "type": "func",
+    "target": "<target>",
+    "targetLabel": "<title>",
+    "armType": "Microsoft.Web/sites",
+    "ask": "own",
+    "free": "nameAvailable",
+    "apiVersion": "2024-04-01",
+    "param": "<key>Name",
+    "kind": "functionApp",
+    "runtime": "<q.runtime>",
+    "stateStorage": "<stateStorage>",
+    "role": "Azure Functions with a managed identity",
+    "appSettings": [
+      { "name": "AzureWebJobsStorage__accountName", "value": "{<stateStorage>.name}" },
+      { "name": "FUNCTIONS_EXTENSION_VERSION", "value": "~4", "when": { "hosting": "plan" } },
+      { "name": "FUNCTIONS_WORKER_RUNTIME", "value": "<q.runtime.name>", "when": { "hosting": "plan" } }
+    ],
+    "cost": { "kind": "table", "order": 40, "label": "Function app {name}", "prices": {}, "text": "per use (Flex Consumption has a monthly free amount; on a plan: the plan's price)" },
+    "deploy": { "workflow": "<key>.yml", "name": "<title>", "source": "<q.source>", "project": "<q.source>", "dotnet": "<q.runtime.version>.x" }
+  },
+  "github": { "deployRole": "Website Contributor", "variable": "AZURE_<KEY>_NAME" },
+  "providers": ["Microsoft.Web", "Microsoft.Storage"],
+  "removeOrder": { "types": ["Microsoft.Web/sites"], "before": ["Microsoft.Web/serverFarms"] }
+}

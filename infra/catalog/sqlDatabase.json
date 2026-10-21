@@ -1,0 +1,42 @@
+{
+  "kind": "sqlDatabase",
+  "title": "SQL database",
+  "about": "An Azure SQL database on a SQL server of the map. The apps that use it sign in with their managed identities: the setup creates their database users (step Database access) and gives them a connection string without a password.",
+  "addable": true,
+  "keyDefault": "db",
+  "naming": { "type": "sqldb", "about": "main SQL database of the project", "maxLength": 128 },
+  "requires": [
+    { "kind": "sqlServer", "question": "Which SQL server is it on?", "connection": { "kind": "host", "what": "is on", "via": "its server" } }
+  ],
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (on <host.title>)",
+    "type": "sqldb",
+    "armType": "Microsoft.Sql/servers/databases",
+    "ask": "child",
+    "probe": "sqlDatabase",
+    "param": "<key>Name",
+    "kind": "sqlDatabase",
+    "role": "Azure SQL database; the apps sign in with their managed identities",
+    "size": { "answer": "<key>Sku", "param": "<key>Sku", "label": "Size of <title>", "options": ["Basic", "S0", "S1", "GP_S_Gen5_1", "GP_S_Gen5_2"], "default": "Basic" },
+    "cost": {
+      "kind": "table",
+      "order": 21,
+      "label": "SQL database {name} ({size})",
+      "prices": { "Basic": 4.21, "S0": 12.65, "S1": 25.30 },
+      "texts": { "GP_S_Gen5_1": "per use: vCore seconds while active (pauses after an hour) + storage", "GP_S_Gen5_2": "per use: vCore seconds while active (pauses after an hour) + storage" }
+    }
+  },
+  "users": {
+    "kinds": ["appService", "functionApp"],
+    "question": "Which apps use <title>?",
+    "connection": { "kind": "sql", "dbRoles": ["db_datareader", "db_datawriter"], "what": "reads and writes", "via": "its managed identity: a database user (step Database access)" },
+    "settings": [
+      { "name": "ConnectionStrings__<Key>", "value": "Server=tcp:{<host>.host},1433;Database={<key>.name};Authentication=Active Directory Default;Encrypt=True;" }
+    ]
+  },
+  "providers": ["Microsoft.Sql"],
+  "steps": [{ "name": "Database access", "after": "1. Azure resources" }],
+  "removeOrder": { "types": ["Microsoft.Sql/servers/databases"], "before": ["Microsoft.Sql/servers", "Microsoft.Web/serverFarms", "Microsoft.OperationalInsights/workspaces"] }
+}

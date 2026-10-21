@@ -1,0 +1,25 @@
+{
+  "kind": "appServicePlan",
+  "title": "App Service plan",
+  "about": "A Linux App Service plan the APIs (and function apps on a plan) run on; new, or shared from another resource group.",
+  "addable": true,
+  "keyDefault": "plan",
+  "naming": { "type": "appplan" },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title>",
+    "type": "appplan",
+    "armType": "Microsoft.Web/serverfarms",
+    "ask": "shared",
+    "check": "linuxPlanInRegion",
+    "param": "<key>Name",
+    "groupParam": "<key>Group",
+    "kind": "appServicePlan",
+    "role": "Linux plan the apps run on",
+    "size": { "answer": "<key>Sku", "param": "<key>Sku", "label": "Size of <title>", "options": ["B1", "B2", "P0v3", "P1v3"], "default": "B1", "readCurrent": true },
+    "cost": { "kind": "appServicePlan", "order": 1, "label": "App Service plan {name} ({size}, Linux, always on)", "sharedLabel": "App Service plan {name} (shared from {group})" }
+  },
+  "providers": ["Microsoft.Web"],
+  "removeOrder": { "types": ["Microsoft.Web/serverFarms"], "before": ["Microsoft.OperationalInsights/workspaces"] }
+}

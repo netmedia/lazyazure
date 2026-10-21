@@ -1,0 +1,27 @@
+{
+  "kind": "sqlServer",
+  "title": "SQL server",
+  "about": "An Azure SQL logical server with Entra sign-in only (an Entra admin you choose, no SQL passwords); new, or shared from another resource group. Its databases are separate resources.",
+  "addable": true,
+  "keyDefault": "sqlServer",
+  "naming": { "type": "sqlserv", "about": "Azure SQL server", "maxLength": 63 },
+  "entry": {
+    "key": "<key>",
+    "title": "<title>",
+    "label": "<title> (globally unique: <name>.database.windows.net)",
+    "type": "sqlserv",
+    "armType": "Microsoft.Sql/servers",
+    "ask": "shared",
+    "check": "sameRegion",
+    "free": "nameAvailable",
+    "apiVersion": "2023-08-01",
+    "param": "<key>Name",
+    "groupParam": "<key>Group",
+    "kind": "sqlServer",
+    "admin": { "answer": "<key>Admin", "label": "Entra admin of <title> (a user's sign-in name or a group's name; Enter = you)", "loginParam": "<key>AdminLogin", "sidParam": "<key>AdminSid", "typeParam": "<key>AdminType" },
+    "role": "Azure SQL server: Entra sign-in only, reachable from Azure services",
+    "cost": { "kind": "table", "order": 20, "label": "SQL server {name} (free; its databases cost)", "prices": {}, "otherwise": 0 }
+  },
+  "providers": ["Microsoft.Sql"],
+  "removeOrder": { "types": ["Microsoft.Sql/servers"], "before": ["Microsoft.Web/serverFarms", "Microsoft.OperationalInsights/workspaces"] }
+}
