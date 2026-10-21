@@ -28,7 +28,7 @@ jobs:
     outputs:
       environment: ${{ steps.pick.outputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: infra
       - id: pick
@@ -42,13 +42,13 @@ jobs:
     environment: ${{ needs.route.outputs.environment }}
     name: Build and Deploy Job
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           submodules: true
           lfs: false
 //#if node
 {{nodeComment}}
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: {{node}}
           cache: npm

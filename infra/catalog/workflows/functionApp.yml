@@ -28,8 +28,8 @@ jobs:
     name: Test (Linux)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '{{dotnet}}'
 {{testStep}}
@@ -43,7 +43,7 @@ jobs:
     outputs:
       environment: ${{ steps.pick.outputs.environment }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           sparse-checkout: infra
       - id: pick
@@ -65,9 +65,9 @@ jobs:
         run: |
           if [ -n "${{ vars.{{appVar}} }}" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
           else echo "::notice::No {{appVar}} in this environment yet (.\infra\azure-setup.ps1): deploy skipped."; fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         if: steps.env.outputs.ready
-      - uses: actions/setup-dotnet@v4
+      - uses: actions/setup-dotnet@v6
         if: steps.env.outputs.ready
         with:
           dotnet-version: '{{dotnet}}'
@@ -75,7 +75,7 @@ jobs:
       - name: Publish
         if: steps.env.outputs.ready
         run: dotnet publish {{project}} -c Release{{publishArgs}} -o publish
-      - uses: azure/login@v2
+      - uses: azure/login@v3
         if: steps.env.outputs.ready
         with:
           client-id: ${{ vars.AZURE_CLIENT_ID }}
