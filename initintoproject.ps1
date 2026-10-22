@@ -33,7 +33,8 @@
 
 .PARAMETER Target
     (Required) The project's infra folder, e.g. D:\Development\Netmedia\MyProject\infra.
-    Created when missing.
+    Created when missing. A folder not named infra (or infrastructure, iac, azure, bicep, deploy)
+    asks: create <Target>\infra there (Yes), or put the kit right into <Target> (No).
 
 .PARAMETER Update
     Update the kit's files of a project that has LazyAzure.
@@ -126,7 +127,8 @@ function Show-Usage {
     & $b 'ARGUMENTS'
     & $y '  <Target>  (required)'
     & $d '    The project''s infra folder, e.g. D:\Development\Netmedia\MyProject\infra.'
-    & $d '    Created when missing.'
+    & $d '    Created when missing. Not named infra (or infrastructure, iac, azure, bicep,'
+    & $d '    deploy): asks whether to create <Target>\infra (Yes) or use <Target> as is (No).'
     Write-Host ''
     & $b 'OPTIONS'
     & $y '  -Update'
@@ -169,8 +171,19 @@ if ($Help -or [string]::IsNullOrWhiteSpace($Target)) {
     exit 0
 }
 
-$Target = [IO.Path]::GetFullPath($Target)
-$has = Test-Path (Join-Path $Target 'azure-setup.ps1')
+$Target = [IO.Path]::GetFullPath($Target).TrimEnd('\', '/')
+# A path that isn't an infra folder (e.g. the project's root): the kit into <Target>\infra, or right there?
+$infraNames = @('infra', 'infrastructure', 'iac', 'azure', 'bicep', 'deploy')
+if (-not (Test-Path (Join-Path $Target 'azure-setup.ps1')) -and $infraNames -notcontains (Split-Path $Target -Leaf).ToLowerInvariant()) {
+    $sub = Join-Path $Target 'infra'
+    Write-Warn "$Target doesn't look like an infra folder."
+    Write-Host "    Yes: create $sub and put LazyAzure there (lazyazure.exe goes into $Target)" -ForegroundColor DarkGray
+    Write-Host "    No:  put it right into $Target" -ForegroundColor DarkGray
+    $answer = Read-Host '  Create the infra folder? [Y/n]'
+    if ($null -eq $answer) { $answer = '' }
+    if ($answer.Trim() -notmatch '^(n|no)$') { $Target = $sub }
+}
+$has =Test-Path (Join-Path $Target 'azure-setup.ps1')
 if ($has -and -not $Update) { Write-Err "$Target has LazyAzure already: -Update replaces the kit's files there."; exit 1 }
 if (-not $has -and $Update) { Write-Err "$Target has no LazyAzure to update: leave -Update out to put it there."; exit 1 }
 if ($DryRun) { Write-Host "`n  == DRY RUN - nothing is copied ==" -ForegroundColor Cyan }
